@@ -1,0 +1,57 @@
+server:
+  port: ${PORT:8081}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: microservicio-pedidos
+
+  # Persistencia por defecto con H2 para pruebas inmediatas y demostración estable
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:pedidosdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    database-platform: ${SPRING_JPA_DIALECT:org.hibernate.dialect.H2Dialect}
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Configuración OAuth2 Resource Server (Microsoft Entra ID)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_ISSUER_URI:https://login.microsoftonline.com/092500a8-a2b9-4d48-8ac2-1241d08e37c1/v2.0}
+
+# Parámetros específicos para validación Zero Trust de Azure
+azure:
+  tenant-id: ${AZURE_TENANT_ID:092500a8-a2b9-4d48-8ac2-1241d08e37c1}
+  audience: ${AZURE_AUDIENCE:api://pedidos360-backend}
+  cors:
+    allowed-origins:
+      - "http://localhost:4200"
+      - "https://*.amazonaws.com"
+      - "https://*.azurewebsites.net"
+
+# Exposición de Actuator para API Gateway / Load Balancer Health Checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    root: INFO
+    cl.pedidos360: DEBUG
+    org.springframework.security: INFO
