@@ -1,0 +1,24 @@
+# ==============================================================================
+# Kafka UI - administración de brokers, tópicos y consumer groups
+# Requiere que docker-compose.kafka.yml esté levantado (comparte la red kafka_net)
+# Uso:  docker compose -f docker-compose.kafka-ui.yml up -d
+# Abrir: http://localhost:8090
+# ==============================================================================
+
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8090:8080"      # 8090 para no chocar con el backend (8081) ni otros servicios
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pedidos360-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092
+    networks:
+      - kafka_net
+
+networks:
+  kafka_net:
+    external: true
+    name: kafka_net

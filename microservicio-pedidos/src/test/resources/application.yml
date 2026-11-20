@@ -10,7 +10,27 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        max.block.ms: 200
+        spring.json.add.type.headers: false
+    listener:
+      auto-startup: false
 
 azure:
   tenant-id: test-tenant
   audience: api://pedidos360-backend
+
+management:
+  health:
+    rabbit:
+      enabled: false

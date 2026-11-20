@@ -1,0 +1,81 @@
+server:
+  port: ${PORT:8083}
+
+spring:
+  application:
+    name: microservicio-kafka-admin
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_ISSUER_URI:https://login.microsoftonline.com/092500a8-a2b9-4d48-8ac2-1241d08e37c1/v2.0}
+
+  # ======================== KAFKA (cliente administrador) ========================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    admin:
+      properties:
+        request.timeout.ms: 15000
+        delivery.timeout.ms: 60000
+        default.api.timeout.ms: 15000
+
+# ======================== TOPICOS GESTIONADOS ========================
+# El broker tiene auto-create desactivado: estos topicos los crea este servicio al arrancar
+# (o con POST /api/kafka/admin/topics/bootstrap). Es la fuente unica de verdad de su configuracion.
+kafka-admin:
+  bootstrap-topics-on-startup: true
+  topics:
+    # Eventos de pedidos. Retencion 7 dias; borrado por tiempo.
+    - name: pedidos.eventos
+      partitions: 3
+      replication-factor: 2
+      configs:
+        cleanup.policy: delete
+        retention.ms: "604800000"
+        min.insync.replicas: "1"
+    # Metricas por cliente. Compactado: se conserva la ultima por key (cliente); ademas 30 dias.
+    - name: pedidos.analitica
+      partitions: 3
+      replication-factor: 2
+      configs:
+        cleanup.policy: compact,delete
+        retention.ms: "2592000000"
+        min.insync.replicas: "1"
+    # Dead letter topics: pocos datos, retencion larga (14 dias) para poder investigar.
+    - name: pedidos.eventos.DLT
+      partitions: 1
+      replication-factor: 2
+      configs:
+        cleanup.policy: delete
+        retention.ms: "1209600000"
+    - name: pedidos.analitica.DLT
+      partitions: 1
+      replication-factor: 2
+      configs:
+        cleanup.policy: delete
+        retention.ms: "1209600000"
+
+azure:
+  tenant-id: ${AZURE_TENANT_ID:092500a8-a2b9-4d48-8ac2-1241d08e37c1}
+  audience: ${AZURE_AUDIENCE:api://pedidos360-backend}
+  cors:
+    allowed-origins:
+      - "http://localhost:4200"
+      - "https://*.amazonaws.com"
+      - "https://*.azurewebsites.net"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    root: INFO
+    cl.pedidos360: DEBUG
+    org.apache.kafka: WARN

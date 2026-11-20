@@ -1,6 +1,7 @@
 package cl.pedidos360.microservicio_pedidos.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import cl.pedidos360.microservicio_pedidos.dto.TipoEventoPedido;
 import cl.pedidos360.microservicio_pedidos.exception.ResourceNotFoundException;
 import cl.pedidos360.microservicio_pedidos.model.Pedido;
+import cl.pedidos360.microservicio_pedidos.producer.PedidoKafkaProducer;
 import cl.pedidos360.microservicio_pedidos.service.PedidoService;
 import jakarta.validation.Valid;
 
@@ -23,9 +26,11 @@ import jakarta.validation.Valid;
 public class PedidoController {
 
     private final PedidoService pedidoService;
+    private final PedidoKafkaProducer kafkaProducer;
 
-    public PedidoController(PedidoService pedidoService) {
+    public PedidoController(PedidoService pedidoService, PedidoKafkaProducer kafkaProducer) {
         this.pedidoService = pedidoService;
+        this.kafkaProducer = kafkaProducer;
     }
 
     /**
@@ -58,6 +63,8 @@ public class PedidoController {
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('SCOPE_Pedidos.Write')")
     public ResponseEntity<Pedido> crearPedido(@Valid @RequestBody Pedido pedido) {
         Pedido creado = pedidoService.crearPedido(pedido);
+        // Se publica DESPUÉS de persistir; si Kafka falla, el pedido igual queda creado.
+        kafkaProducer.publicar(TipoEventoPedido.PEDIDO_CREADO, creado);
         return new ResponseEntity<>(creado, HttpStatus.CREATED);
     }
 
@@ -68,7 +75,10 @@ public class PedidoController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminarPedido(@PathVariable Long id) {
+        // Se lee antes de borrar para poder informar cliente y estado en el evento.
+        Optional<Pedido> existente = pedidoService.obtenerPorId(id);
         pedidoService.eliminarPedido(id);
+        existente.ifPresent(p -> kafkaProducer.publicar(TipoEventoPedido.PEDIDO_ELIMINADO, p));
         return ResponseEntity.noContent().build();
     }
 }

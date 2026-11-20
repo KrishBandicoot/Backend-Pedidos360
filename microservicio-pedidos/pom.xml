@@ -26,6 +26,12 @@
 			<artifactId>spring-boot-starter-amqp</artifactId>
 		</dependency>
 
+		<!-- Spring for Apache Kafka (productores, consumidores, DLT) -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+
 		<!-- Spring Boot Starter Web (REST Controllers) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -44,11 +50,6 @@
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 		
-		<!-- Spring MVC REST -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
 
 		<!-- Spring Data JPA -->
 		<dependency>
@@ -62,11 +63,6 @@
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 		</dependency>
 
-		<!-- Bean Validation (Jakarta @NotNull, @NotBlank, etc.) -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
-		</dependency>
 
 		<!-- Actuator (Health check para AWS API Gateway / Load Balancer) -->
 		<dependency>

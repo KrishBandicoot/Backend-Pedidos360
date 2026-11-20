@@ -28,3 +28,18 @@
 /nbdist/
 /.nb-gradle/
 build/
+
+# Compilados
+target/
+**/target/
+
+# Editores
+.vscode/
+.idea/
+*.iml
+
+# Secretos y variables locales (NUNCA subir)
+.env
+*.env
+!.env.example
+*.pem

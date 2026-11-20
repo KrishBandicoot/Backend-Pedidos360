@@ -1,0 +1,70 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: microservicio-analitica
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AZURE_ISSUER_URI:https://login.microsoftonline.com/092500a8-a2b9-4d48-8ac2-1241d08e37c1/v2.0}
+
+  # ======================== KAFKA ========================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        request.timeout.ms: 15000
+        delivery.timeout.ms: 60000
+        linger.ms: 5
+        max.block.ms: 5000
+        spring.json.add.type.headers: false
+    consumer:
+      # Grupo por defecto; cada @KafkaListener define el suyo explicitamente
+      group-id: analitica-metricas-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: cl.pedidos360.microservicio_analitica.dto.PedidoEventoDto
+        spring.json.trusted.packages: cl.pedidos360.microservicio_analitica.dto
+        spring.json.use.type.headers: false
+        max.poll.records: 100
+        session.timeout.ms: 30000
+    listener:
+      ack-mode: record
+      # 3 hilos = 3 particiones de pedidos.eventos: una particion por hilo
+      concurrency: 3
+
+azure:
+  tenant-id: ${AZURE_TENANT_ID:092500a8-a2b9-4d48-8ac2-1241d08e37c1}
+  audience: ${AZURE_AUDIENCE:api://pedidos360-backend}
+  cors:
+    allowed-origins:
+      - "http://localhost:4200"
+      - "https://*.amazonaws.com"
+      - "https://*.azurewebsites.net"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    root: INFO
+    cl.pedidos360: DEBUG
+    org.apache.kafka: WARN
